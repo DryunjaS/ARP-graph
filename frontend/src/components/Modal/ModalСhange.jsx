@@ -9,12 +9,40 @@ function ModalChange({ show, setShow, currentNode, updateNodeImage }) {
 
 	useEffect(() => {
 		if (currentNode) {
-			if (currentNode.imgUrl === "/images/pc.png") {
-				setCurrent("Компьютер")
-			} else if (currentNode.imgUrl === "/images/router.png") {
-				setCurrent("Маршрутизатор")
-			} else if (currentNode.imgUrl === "/images/switch.png") {
-				setCurrent("Коммутатор")
+			switch (currentNode.imgUrl) {
+				case "/images/pc.png":
+					setCurrent("Компьютер")
+					break
+				case "/images/router.png":
+					setCurrent("Маршрутизатор")
+					break
+				case "/images/switch.png":
+					setCurrent("Коммутатор")
+					break
+				// Добавляем дополнительные случаи
+				case "/images/hub.png":
+					setCurrent("Концентратор")
+					break
+				case "/images/laptop.png":
+					setCurrent("Ноутбук")
+					break
+				case "/images/printer.png":
+					setCurrent("Принтер")
+					break
+				case "/images/network.png":
+					setCurrent("Сеть")
+					break
+				case "/images/server.png":
+					setCurrent("Сервер")
+					break
+				case "/images/L3.png":
+					setCurrent("Коммутатор 3 ур.")
+					break
+				case "/images/phone.png":
+					setCurrent("Телефон")
+					break
+				default:
+					setCurrent("")
 			}
 		}
 	}, [currentNode])
@@ -24,12 +52,39 @@ function ModalChange({ show, setShow, currentNode, updateNodeImage }) {
 	const handleSave = () => {
 		if (hardware) {
 			let newImgUrl = ""
-			if (hardware === "Компьютер") {
-				newImgUrl = "/images/pc.png"
-			} else if (hardware === "Маршрутизатор") {
-				newImgUrl = "/images/router.png"
-			} else if (hardware === "Коммутатор") {
-				newImgUrl = "/images/switch.png"
+			switch (hardware) {
+				case "Компьютер":
+					newImgUrl = "/images/pc.png"
+					break
+				case "Маршрутизатор":
+					newImgUrl = "/images/router.png"
+					break
+				case "Коммутатор":
+					newImgUrl = "/images/switch.png"
+					break
+				case "Концентратор":
+					newImgUrl = "/images/hub.png"
+					break
+				case "Ноутбук":
+					newImgUrl = "/images/laptop.png"
+					break
+				case "Принтер":
+					newImgUrl = "/images/printer.png"
+					break
+				case "Сеть":
+					newImgUrl = "/images/network.png"
+					break
+				case "Сервер":
+					newImgUrl = "/images/server.png"
+					break
+				case "Коммутатор 3 ур.":
+					newImgUrl = "/images/L3.png"
+					break
+				case "Телефон":
+					newImgUrl = "/images/phone.png"
+					break
+				default:
+					newImgUrl = ""
 			}
 			updateNodeImage(newImgUrl)
 		}
@@ -59,6 +114,14 @@ function ModalChange({ show, setShow, currentNode, updateNodeImage }) {
 							<option value='Маршрутизатор'>Маршрутизатор</option>
 							<option value='Коммутатор'>Коммутатор</option>
 							<option value='Компьютер'>Компьютер</option>
+							{/* Добавляем остальные варианты */}
+							<option value='Концентратор'>Концентратор</option>
+							<option value='Ноутбук'>Ноутбук</option>
+							<option value='Принтер'>Принтер</option>
+							<option value='Сеть'>Сеть</option>
+							<option value='Сервер'>Сервер</option>
+							<option value='Коммутатор 3 ур.'>Коммутатор 3 ур.</option>
+							<option value='Телефон'>Телефон</option>
 						</Form.Select>
 					</div>
 				</Modal.Body>

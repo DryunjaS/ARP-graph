@@ -1,16 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react"
 import ForceGraph2D from "react-force-graph-2d"
 import ModalChange from "./Modal/ModalСhange"
-
-const arpTable = [
-	{ ip: "192.168.64.255", mac: "ff-ff-ff-ff-ff-ff", type: "static" },
-	{ ip: "224.0.0.22", mac: "01-00-5e-00-00-16", type: "static" },
-	{ ip: "224.0.0.251", mac: "01-00-5e-00-00-fb", type: "static" },
-	{ ip: "224.0.0.252", mac: "01-00-5e-00-00-fc", type: "static" },
-	{ ip: "239.192.152.143", mac: "01-00-5e-40-98-8f", type: "static" },
-	{ ip: "239.255.255.250", mac: "01-00-5e-7f-ff-fa", type: "static" },
-	{ ip: "239.255.255.250", mac: "ff-ff-ff-ff-ff-ff", type: "static" },
-]
+import ModalDelete from "./Modal/ModalDelete"
+import LeftOffcanvas from "../components/Modal/Offcanvas"
+import Button from "react-bootstrap/Button"
 
 const parseArpTable = (arpTable) => {
 	const root = {
@@ -87,19 +80,34 @@ const createGraphData = (graphDataNew) => {
 const NetworkGraph = () => {
 	const [graphData, setGraphData] = useState({ nodes: [], links: [] })
 	const [graphDataNew, setGraphDataNew] = useState([])
+	const [arpTable, setArpTable] = useState([
+		{ ip: "192.168.64.255", mac: "ff-ff-ff-ff-ff-ff", type: "static" },
+		{ ip: "224.0.0.22", mac: "01-00-5e-00-00-16", type: "static" },
+		{ ip: "224.0.0.251", mac: "01-00-5e-00-00-fb", type: "static" },
+		{ ip: "224.0.0.252", mac: "01-00-5e-00-00-fc", type: "static" },
+		{ ip: "239.192.152.143", mac: "01-00-5e-40-98-8f", type: "static" },
+		{ ip: "239.255.255.250", mac: "01-00-5e-7f-ff-fa", type: "static" },
+		{ ip: "239.255.255.252", mac: "ff-ff-ff-ff-ff-ff", type: "static" },
+	])
 
 	const [show, setShow] = useState(false)
+	const [showDelete, setShowDelete] = useState(false)
+	const [showOffcan, setShowOffcan] = useState(false)
+
 	const [currentNode, setCurrentNode] = useState(null)
 
 	useEffect(() => {
-		const hierarchicalData = parseArpTable(arpTable)
-		setGraphDataNew(hierarchicalData)
-	}, [])
+		if (arpTable.length > 0) {
+			const hierarchicalData = parseArpTable(arpTable)
+			setGraphDataNew(hierarchicalData)
+		}
+	}, [arpTable])
 
 	useEffect(() => {
-		console.log(graphDataNew)
-		const data = createGraphData(graphDataNew)
-		setGraphData(data)
+		if (graphDataNew.length > 0) {
+			const data = createGraphData(graphDataNew)
+			setGraphData(data)
+		}
 	}, [graphDataNew])
 
 	const loadImage = useCallback((src) => {
@@ -132,6 +140,10 @@ const NetworkGraph = () => {
 		setCurrentNode(node)
 		setShow(true)
 	}
+	const handleNodeRightClick = (node) => {
+		setCurrentNode(node)
+		setShowDelete(true)
+	}
 	const updateNodeImage = (newImageUrl) => {
 		const updatedGraphData = updateNodeImageRecursively(
 			graphDataNew,
@@ -149,7 +161,6 @@ const NetworkGraph = () => {
 					imgUrl: newImageUrl,
 				}
 			} else if (entry.children && entry.children.length > 0) {
-				// Если есть дочерние узлы, рекурсивно вызываем эту функцию для них
 				return {
 					...entry,
 					children: updateNodeImageRecursively(
@@ -161,6 +172,34 @@ const NetworkGraph = () => {
 			}
 			return entry
 		})
+	}
+
+	const handleDeleteNode = (node) => {
+		const updatedGraphData = deleteNodeAndReassignChildren(
+			graphDataNew,
+			node.ip
+		)
+		setGraphDataNew(updatedGraphData)
+	}
+
+	const deleteNodeAndReassignChildren = (data, nodeIp) => {
+		const traverse = (entries, parent = null) => {
+			return entries
+				.map((entry) => {
+					if (entry.ip === nodeIp) {
+						if (parent) {
+							parent.children = parent.children.concat(entry.children || [])
+						}
+						return null
+					}
+					if (entry.children) {
+						entry.children = traverse(entry.children, entry)
+					}
+					return entry
+				})
+				.filter((entry) => entry !== null)
+		}
+		return traverse(data)
 	}
 
 	const handleImageChange = (newImageUrl) => {
@@ -175,14 +214,44 @@ const NetworkGraph = () => {
 				currentNode={currentNode}
 				updateNodeImage={handleImageChange}
 			/>
-
+			<ModalDelete
+				show={showDelete}
+				setShow={setShowDelete}
+				currentNode={currentNode}
+				onDelete={handleDeleteNode}
+			/>
+			<Button
+				variant='primary'
+				onClick={() => setShowOffcan(true)}
+				id='btn-menu'
+			>
+				Меню
+			</Button>
+			<LeftOffcanvas
+				show={showOffcan}
+				setShow={setShowOffcan}
+				setArpTable={setArpTable}
+			/>
 			<ForceGraph2D
 				graphData={graphData}
 				onNodeClick={handleNodeClick}
-				nodeLabel={(node) => `IP: ${node.ip}\nMAC: ${node.mac}`}
+				onNodeRightClick={handleNodeRightClick}
 				nodeCanvasObject={(node, ctx, globalScale) => {
 					renderNode(node, ctx, globalScale)
+					const fileName = node.imgUrl.split("/").pop().split(".")[0]
+					const capitalizedFileName =
+						fileName.length === 2
+							? fileName.toUpperCase()
+							: fileName.charAt(0).toUpperCase() + fileName.slice(1)
+					const fontSize = 12 / globalScale
+					ctx.font = `${fontSize}px Arial`
+					ctx.textAlign = "center"
+					ctx.textBaseline = "middle"
+					ctx.fillStyle = "black"
+					ctx.fillText(capitalizedFileName, node.x, node.y + 13)
 				}}
+				linkDirectionalParticles={1}
+				nodeLabel={(node) => `IP: ${node.ip}\nMAC: ${node.mac}`}
 			/>
 		</>
 	)
