@@ -80,6 +80,8 @@ const createGraphData = (graphDataNew) => {
 const NetworkGraph = () => {
 	const [graphData, setGraphData] = useState({ nodes: [], links: [] })
 	const [graphDataNew, setGraphDataNew] = useState([])
+	const [nameNodes, setNameNodes] = useState([])
+
 	const [arpTable, setArpTable] = useState([
 		{ ip: "192.168.64.255", mac: "ff-ff-ff-ff-ff-ff", type: "static" },
 		{ ip: "224.0.0.22", mac: "01-00-5e-00-00-16", type: "static" },
@@ -103,13 +105,48 @@ const NetworkGraph = () => {
 		}
 	}, [arpTable])
 
+	//---Получение массива имен------
+	const traverseTree = (node, nodesMap, nameCount) => {
+		if (node.imgUrl) {
+			const fileName = node.imgUrl.split("/").pop().split(".")[0]
+			const capitalizedFileName =
+				fileName.length === 2
+					? fileName.toUpperCase()
+					: fileName.charAt(0).toUpperCase() + fileName.slice(1)
+
+			if (node.ip) {
+				if (!nameCount[capitalizedFileName]) {
+					nameCount[capitalizedFileName] = 1
+				} else {
+					nameCount[capitalizedFileName]++
+				}
+				const uniqueName = `${capitalizedFileName}${nameCount[capitalizedFileName]}`
+
+				nodesMap[node.ip] = { ip: node.ip, name: uniqueName }
+			}
+		}
+
+		if (node.children && Array.isArray(node.children)) {
+			node.children.forEach((childNode) =>
+				traverseTree(childNode, nodesMap, nameCount)
+			)
+		}
+	}
+
 	useEffect(() => {
 		if (graphDataNew.length > 0) {
 			const data = createGraphData(graphDataNew)
 			setGraphData(data)
 		}
-	}, [graphDataNew])
 
+		const nodesMap = {}
+		const nameCount = {}
+		graphDataNew.forEach((node) => traverseTree(node, nodesMap, nameCount))
+		setNameNodes(Object.values(nodesMap))
+	}, [graphDataNew])
+	useEffect(() => {
+		console.log(nameNodes)
+	}, [nameNodes])
 	const loadImage = useCallback((src) => {
 		return new Promise((resolve, reject) => {
 			const img = new Image()
@@ -140,10 +177,12 @@ const NetworkGraph = () => {
 		setCurrentNode(node)
 		setShow(true)
 	}
+
 	const handleNodeRightClick = (node) => {
 		setCurrentNode(node)
 		setShowDelete(true)
 	}
+
 	const updateNodeImage = (newImageUrl) => {
 		const updatedGraphData = updateNodeImageRecursively(
 			graphDataNew,
@@ -171,6 +210,22 @@ const NetworkGraph = () => {
 				}
 			}
 			return entry
+		})
+	}
+	const updateNodeNameByIp = (ip, newName) => {
+		setNameNodes((prevNameNodes) => {
+			const updatedNameNodes = [...prevNameNodes]
+
+			const nodeIndex = updatedNameNodes.findIndex((node) => node.ip === ip)
+
+			if (nodeIndex !== -1) {
+				updatedNameNodes[nodeIndex] = {
+					...updatedNameNodes[nodeIndex],
+					name: newName,
+				}
+			}
+
+			return updatedNameNodes
 		})
 	}
 
@@ -206,6 +261,11 @@ const NetworkGraph = () => {
 		updateNodeImage(newImageUrl)
 	}
 
+	// Создаем объект для быстрого поиска названий узлов по IP
+	const nameNodesMap = Object.fromEntries(
+		nameNodes.map((node) => [node.ip, node.name])
+	)
+
 	return (
 		<>
 			<ModalChange
@@ -213,6 +273,8 @@ const NetworkGraph = () => {
 				setShow={setShow}
 				currentNode={currentNode}
 				updateNodeImage={handleImageChange}
+				nameNodes={nameNodes}
+				updateNodeNameByIp={updateNodeNameByIp}
 			/>
 			<ModalDelete
 				show={showDelete}
@@ -238,17 +300,13 @@ const NetworkGraph = () => {
 				onNodeRightClick={handleNodeRightClick}
 				nodeCanvasObject={(node, ctx, globalScale) => {
 					renderNode(node, ctx, globalScale)
-					const fileName = node.imgUrl.split("/").pop().split(".")[0]
-					const capitalizedFileName =
-						fileName.length === 2
-							? fileName.toUpperCase()
-							: fileName.charAt(0).toUpperCase() + fileName.slice(1)
+					const nodeName = nameNodesMap[node.ip] || ""
 					const fontSize = 12 / globalScale
 					ctx.font = `${fontSize}px Arial`
 					ctx.textAlign = "center"
 					ctx.textBaseline = "middle"
 					ctx.fillStyle = "black"
-					ctx.fillText(capitalizedFileName, node.x, node.y + 13)
+					ctx.fillText(nodeName, node.x, node.y + 13)
 				}}
 				linkDirectionalParticles={1}
 				nodeLabel={(node) => `IP: ${node.ip}\nMAC: ${node.mac}`}

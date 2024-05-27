@@ -3,8 +3,9 @@
   padding: 0;
 }
 
-button #btn-menu {
-  position: absolutec !important;
-  top: 20px;
-  left: 20px;
+#btn-menu {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
 }

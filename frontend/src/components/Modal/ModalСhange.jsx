@@ -3,9 +3,17 @@ import Button from "react-bootstrap/Button"
 import Modal from "react-bootstrap/Modal"
 import Form from "react-bootstrap/Form"
 
-function ModalChange({ show, setShow, currentNode, updateNodeImage }) {
+function ModalChange({
+	show,
+	setShow,
+	currentNode,
+	updateNodeImage,
+	nameNodes,
+	updateNodeNameByIp,
+}) {
 	const [hardware, setHardware] = useState("")
 	const [current, setCurrent] = useState("")
+	const [nameNode, setNameNode] = useState()
 
 	useEffect(() => {
 		if (currentNode) {
@@ -19,7 +27,6 @@ function ModalChange({ show, setShow, currentNode, updateNodeImage }) {
 				case "/images/switch.png":
 					setCurrent("Коммутатор")
 					break
-				// Добавляем дополнительные случаи
 				case "/images/hub.png":
 					setCurrent("Концентратор")
 					break
@@ -45,12 +52,19 @@ function ModalChange({ show, setShow, currentNode, updateNodeImage }) {
 					setCurrent("")
 			}
 		}
+		const nameNodesMap = Object.fromEntries(
+			nameNodes.map((node) => [node.ip, node.name])
+		)
+		//Назночение стандартного имени устройства
+		const nameNode = nameNodesMap[currentNode?.ip]
+		setNameNode(nameNode)
 	}, [currentNode])
 
 	const handleClose = () => setShow(false)
 
 	const handleSave = () => {
 		if (hardware) {
+			// Проверка наличия оборудования и имени
 			let newImgUrl = ""
 			switch (hardware) {
 				case "Компьютер":
@@ -88,53 +102,64 @@ function ModalChange({ show, setShow, currentNode, updateNodeImage }) {
 			}
 			updateNodeImage(newImgUrl)
 		}
+		updateNodeNameByIp(currentNode?.ip, nameNode)
+		setHardware("")
 		handleClose()
 	}
 
 	const changeHardware = (event) => {
 		setHardware(event.target.value)
 	}
-
+	const changeNameNode = (event) => {
+		setNameNode(event.target.value)
+	}
 	return (
-		<div
-			className='modal show'
-			style={{ display: "block", position: "initial" }}
-		>
-			<Modal show={show} onHide={handleClose}>
-				<Modal.Header closeButton>
-					<Modal.Title>Изменение типа оборудования</Modal.Title>
-				</Modal.Header>
-				<Modal.Body>
-					<div className='modal-wrapp'>
-						{current && (
-							<h6 className='modal-block'>Текущий элемент: {current}</h6>
-						)}
-						<Form.Select onChange={changeHardware} value={hardware}>
-							<option value=''>Выберите тип оборудования</option>
-							<option value='Маршрутизатор'>Маршрутизатор</option>
-							<option value='Коммутатор'>Коммутатор</option>
-							<option value='Компьютер'>Компьютер</option>
-							{/* Добавляем остальные варианты */}
-							<option value='Концентратор'>Концентратор</option>
-							<option value='Ноутбук'>Ноутбук</option>
-							<option value='Принтер'>Принтер</option>
-							<option value='Сеть'>Сеть</option>
-							<option value='Сервер'>Сервер</option>
-							<option value='Коммутатор 3 ур.'>Коммутатор 3 ур.</option>
-							<option value='Телефон'>Телефон</option>
-						</Form.Select>
-					</div>
-				</Modal.Body>
-				<Modal.Footer>
-					<Button variant='secondary' onClick={handleClose}>
-						Отмена
-					</Button>
-					<Button variant='primary' onClick={handleSave}>
-						Сохранить изменения
-					</Button>
-				</Modal.Footer>
-			</Modal>
-		</div>
+		<Modal show={show} onHide={handleClose}>
+			<Modal.Header closeButton>
+				<Modal.Title>Настройка оборудования</Modal.Title>
+			</Modal.Header>
+			<Modal.Body>
+				<div className='modal-wrapp'>
+					{current && (
+						<h6 className='modal-block'>Текущий элемент: {current}</h6>
+					)}
+					<Form.Select onChange={changeHardware} value={hardware}>
+						<option value=''>Выберите тип оборудования</option>
+						<option value='Маршрутизатор'>Маршрутизатор</option>
+						<option value='Коммутатор'>Коммутатор</option>
+						<option value='Компьютер'>Компьютер</option>
+						<option value='Концентратор'>Концентратор</option>
+						<option value='Ноутбук'>Ноутбук</option>
+						<option value='Принтер'>Принтер</option>
+						<option value='Сеть'>Сеть</option>
+						<option value='Сервер'>Сервер</option>
+						<option value='Коммутатор 3 ур.'>Коммутатор 3 ур.</option>
+						<option value='Телефон'>Телефон</option>
+					</Form.Select>
+
+					<br />
+					<h6 className='modal-block'>Текущее название: </h6>
+
+					{nameNode && (
+						<Form.Control
+							required
+							type='text'
+							placeholder='Название'
+							value={nameNode}
+							onChange={changeNameNode}
+						/>
+					)}
+				</div>
+			</Modal.Body>
+			<Modal.Footer>
+				<Button variant='secondary' onClick={handleClose}>
+					Отмена
+				</Button>
+				<Button variant='primary' onClick={handleSave}>
+					Сохранить изменения
+				</Button>
+			</Modal.Footer>
+		</Modal>
 	)
 }
 
