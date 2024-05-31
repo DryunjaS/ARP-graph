@@ -9,7 +9,7 @@ const parseArpTable = (arpTable) => {
 	const root = {
 		ip: arpTable[0].ip,
 		mac: arpTable[0].mac,
-		imgUrl: "/images/pc.png",
+		imgUrl: "./images/pc.png",
 		children: [],
 	}
 
@@ -97,6 +97,7 @@ const NetworkGraph = () => {
 	const [showOffcan, setShowOffcan] = useState(false)
 
 	const [currentNode, setCurrentNode] = useState(null)
+	const [fullscreen, setFullScreen] = useState(false)
 
 	useEffect(() => {
 		if (arpTable.length > 0) {
@@ -263,6 +264,13 @@ const NetworkGraph = () => {
 	const nameNodesMap = Object.fromEntries(
 		nameNodes.map((node) => [node.ip, node.name])
 	)
+	const handleCloseApp = () => {
+		window.ipcRenderer.send("close-app")
+	}
+	const handleToggleFullscreen = () => {
+		setFullScreen(!fullscreen)
+		window.ipcRenderer.send("toggle-fullscreen")
+	}
 
 	return (
 		<>
@@ -286,6 +294,16 @@ const NetworkGraph = () => {
 				id='btn-menu'
 			>
 				Меню
+			</Button>
+			<Button variant='danger' onClick={handleCloseApp} id='btn-close-app'>
+				Закрыть
+			</Button>
+			<Button
+				variant='primary'
+				onClick={handleToggleFullscreen}
+				id='btn-toggle-app'
+			>
+				{fullscreen ? "Развернуть" : "Свернуть"}
 			</Button>
 			<LeftOffcanvas
 				show={showOffcan}

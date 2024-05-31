@@ -1,0 +1,12 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+.force-graph-container {
+	overflow: hidden;
+	height: 100vh;
+	width: 100vw;
+}
+
+@import "_modal";
+@import "_graph";
